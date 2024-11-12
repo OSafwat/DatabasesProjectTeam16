@@ -1,1 +1,10 @@
 ﻿CREATE DATABASE Telecom_Team_16
+
+GO 
+
+CREATE PROC createAllTables
+AS
+
+CREATE TABLE 
+
+GO;
