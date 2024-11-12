@@ -199,3 +199,32 @@ END
 
 GO
 
+CREATE FUNCTION calculate_remaining_balance (@paymentID INT, @planID INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @amount INT, @price INT
+	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
+	INNER JOIN Payment ON @paymentID = Payment.paymentID 
+	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
+	IF @amount > @price
+		RETURN @amount - @price
+	RETURN 0
+END
+
+GO
+
+CREATE FUNCTION calculate_extra_amount (@paymentID INT, @planID INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @amount INT, @price INT
+	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
+	INNER JOIN Payment ON @paymentID = Payment.paymentID 
+	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
+	IF @price > @amount
+		RETURN @price - @amount
+	RETURN 0
+END
+
+GO
