@@ -228,4 +228,68 @@ BEGIN
 END
 
 GO
+
+CREATE PROCEDURE clearAllTables
+AS
+BEGIN
+	DELETE FROM Customer_Profile;
+	DELETE FROM Customer_Account;
+	DELETE FROM Service_Plan;
+	DELETE FROM Subscription;
+	DELETE FROM Plan_Usage;
+	DELETE FROM Payment;
+	DELETE FROM Process_Payment;
+	DELETE FROM Wallet;
+	DELETE FROM Transfer_Money;
+	DELETE FROM Benefits;
+	DELETE FROM Points_Group;
+	DELETE FROM Exclusive_Offer;
+	DELETE FROM Cashback;
+	DELETE FROM Plan_Provides_Benefits;
+	DELETE FROM Shop;
+	DELETE FROM Physical_Shop;
+	DELETE FROM E_Shop;
+	DELETE FROM Voucher;
+	DELETE FROM Technical_Support_Ticket;
+
+END
+
+GO
+
+CREATE PROCEDURE dropAllTables
+AS
+BEGIN
+	DROP TABLE Technical_Support_Ticket;
+	DROP TABLE Voucher;
+	DROP TABLE E_Shop;
+	DROP TABLE Physical_Shop;
+	DROP TABLE Shop;
+	DROP TABLE Plan_Provides_Benefits;
+	DROP TABLE Cashback;
+	DROP TABLE Exclusive_Offer;
+	DROP TABLE Points_Group;
+	DROP TABLE Benefits;
+	DROP TABLE Transfer_Money;
+	DROP TABLE Wallet;
+	DROP TABLE Process_Payment;
+	DROP TABLE Payment;
+	DROP TABLE Plan_Usage;
+	DROP TABLE Subscription;
+	DROP TABLE Service_Plan;
+	DROP TABLE Customer_Account;
+	DROP TABLE Customer_Profile;
+END
+GO
+
+
+CREATE PROCEDURE dropAllProceduresFunctionsViews
+AS
+BEGIN
+	DROP PROCEDURE createAllTables;
+	DROP FUNCTION calculate_remaining_balance;
+	DROP FUNCTION calculate_extra_amount;
+	DROP PROCEDURE clearAllTables;
+	DROP PROCEDURE dropAllTables;
+END
+GO
 -- mikoto 
