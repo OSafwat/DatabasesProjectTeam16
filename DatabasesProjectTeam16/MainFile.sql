@@ -303,4 +303,9 @@ SELECT * FROM Service_Plan;
 
 GO
 
-CREATE VIEW 
+CREATE VIEW allBenefits AS
+SELECT * From Benefits B 
+WHERE B.status = 'active';
+
+GO
+
