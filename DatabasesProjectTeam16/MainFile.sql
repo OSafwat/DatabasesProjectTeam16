@@ -292,4 +292,15 @@ BEGIN
 	DROP PROCEDURE dropAllTables;
 END
 GO
--- mikoto 
+
+CREATE VIEW allCustomerAccounts AS
+SELECT * FROM Customer_Profile P JOIN Customer_Account A ON P.national_id = A.national_id; 
+
+GO
+
+CREATE VIEW allServicePlans AS
+SELECT * FROM Service_Plan;
+
+GO
+
+CREATE VIEW 
