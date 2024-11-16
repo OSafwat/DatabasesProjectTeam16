@@ -309,3 +309,7 @@ WHERE B.status = 'active';
 
 GO
 
+CREATE VIEW accountPayments AS
+Select * FROM Payments P JOIN Customer_Account A ON P.mobileNo = A.mobileNo;
+
+GO
