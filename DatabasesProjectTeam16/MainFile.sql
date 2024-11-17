@@ -415,3 +415,82 @@ SELECT * FROM dbo.Account_Usage_Plan('01033108747','2022-01-01');
 
 GO
 
+---------------------------------------------------------- Ali
+
+CREATE FUNCTION AccountLoginValidation (@MobileNo CHAR(11), @password VARCHAR(50))
+RETURNS BIT
+AS
+BEGIN
+IF EXISTS (
+	SELECT *
+	FROM Customer_Account
+	WHERE @MobileNo = mobileNo AND @password = pass
+) RETURN 1
+
+RETURN 0
+END
+
+GO
+
+CREATE PROCEDURE Unsubscribed_Plans 
+@MobileNo CHAR(11)
+AS
+SELECT SP.planID
+FROM Service_Plan SP WHERE NOT EXISTS (
+	SELECT * 
+	FROM Subscription S
+	WHERE S.planID = SP.planID AND @MobileNo = mobileNo
+)
+
+GO
+
+-- slightly unsure about this one, but will keep it like this for now - Ali
+CREATE FUNCTION Consumption (@Plan_Name VARCHAR(50), @start_date DATE, @end_date DATE)
+RETURNS TABLE
+AS
+RETURN (
+	SELECT SUM(data_consumption) AS total_data, SUM(minutes_used) AS total_minutes, SUM(SMS_sent) AS total_SMS
+	FROM Plan_Usage
+	WHERE start_date BETWEEN @start_date AND @end_date AND end_date BETWEEN @start_date AND @end_date
+)
+
+GO
+
+-- unsure about what dates im supposed to compare with - Ali
+CREATE FUNCTION Usage_Plan_CurrentMonth (@MobileNo CHAR(11))
+RETURNS TABLE
+AS
+RETURN (
+	SELECT PU.data_consumption, PU.minutes_used, PU.SMS_sent
+	FROM Plan_Usage PU
+	INNER JOIN Subscription S ON S.planID = PU.planID
+	WHERE @MobileNo = PU.mobileNo AND S.status = 'active' AND MONTH(S.subscription_date) = MONTH(GETDATE())
+)
+
+GO
+
+-- unsure what columns we're actually supposed to return - Ali
+CREATE FUNCTION Cashback_Wallet_Customer (@NationalID INT)
+RETURNS TABLE
+AS
+RETURN (
+	SELECT C.cashbackID, C.amount
+	FROM Cashback C
+	INNER JOIN Wallet W ON W.walletID = C.walletID
+	WHERE @NationalID = W.nationalID
+)
+GO
+
+CREATE FUNCTION Ticket_Account_Customer (@NationalID INT)
+RETURNS INT
+AS
+BEGIN
+RETURN (
+	SELECT COUNT(*)
+	FROM Technical_Support_Ticket T
+	INNER JOIN Customer_Account C ON T.mobileNo = C.mobileNo
+	WHERE T.status <> 'resolved' AND @NationalID = C.nationalID
+)
+END
+
+GO
