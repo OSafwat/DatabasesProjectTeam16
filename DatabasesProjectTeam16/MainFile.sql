@@ -313,3 +313,44 @@ CREATE VIEW accountPayments AS
 Select * FROM Payments P JOIN Customer_Account A ON P.mobileNo = A.mobileNo;
 
 GO
+
+CREATE VIEW allShops AS
+	SELECT * FROM Shop;
+
+GO
+
+CREATE VIEW allResolvedTickets AS
+	SELECT * FROM Technical_Support_Ticket
+		WHERE status = 'Resolved';
+
+GO
+
+CREATE VIEW CustomerWallet AS
+	SELECT W.*, CONCAT(C.firstName, ' ', C.lastName) AS customerName
+		FROM Wallet W
+			JOIN Customer_Profile C ON W.nationalID = C.nationalID;
+GO
+
+CREATE VIEW E_shopVouchers AS
+	SELECT E.*, V.voucherId, V.value
+		FROM E_shops E
+			JOIN Voucher V ON E.shopId = V.shopId;
+			
+GO
+
+CREATE VIEW PhysicalStoreVouchers AS
+	SELECT P.*, V.voucherId, V.value
+		FROM Physical_Shop P
+			JOIN Voucher V ON P.storeId = V.storeId;
+			
+
+GO 
+
+CREATE VIEW Num_of_cashback AS
+	SELECT W.walletId, COUNT(C.cashbackID) AS cashbackCount
+		FROM Wallet W
+			JOIN Cashback C ON W.walletId = T.walletId
+					GROUP BY W.walletId;
+GO
+
+           
