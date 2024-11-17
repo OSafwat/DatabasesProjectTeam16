@@ -353,4 +353,65 @@ CREATE VIEW Num_of_cashback AS
 					GROUP BY W.walletId;
 GO
 
-           
+ -------------------------------------------------------------------------------tofy---
+ exec dbo.createAllTables
+ 
+ CREATE ROLE Admin;
+
+ GO
+ CREATE PROCEDURE Account_Plan 
+	AS
+	BEGIN
+	select c.mobileNo , sp.planID
+		from Customer_Account c, Service_Plan sp, Subscription su
+			where c.mobileNo = su.mobileNo AND sp.planID = su.planID;
+	END
+
+EXEC Account_Plan
+GO
+
+
+
+CREATE FUNCTION calculate_remaining_balance (@paymentID INT, @planID INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @amount INT, @price INT
+	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
+	INNER JOIN Payment ON @paymentID = Payment.paymentID 
+	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
+	IF @amount > @price
+		RETURN @amount - @price
+	RETURN 0
+END
+
+GO 
+
+CREATE Function Account_Plan_date (@Subscription_Date date, @Plan_id int)
+returns TABLE
+AS
+RETURN(
+	SELECT c.mobileNo, sp.name , sp.planID
+	FROM Customer_Account c, Service_Plan sp, Subscription s
+	where c.mobileNo = s.mobileNo AND sp.planID = s.planID
+	AND s.planID = @Plan_id AND s.subscription_date = @Subscription_Date
+);
+GO
+
+SELECT * FROM dbo.Account_Plan_date('2022-01-01', 3);
+GO
+
+CREATE FUNCTION Account_Usage_Plan (@MobileNo char(11),@from_date date)
+returns TABLE
+AS
+RETURN(
+		SELECT p.planID , p.data_consumption,p.minutes_used, p.SMS_sent
+		FROM Plan_Usage p
+		where p.mobileNo = @MobileNo AND p.start_date = @from_date
+);
+GO
+
+SELECT * FROM dbo.Account_Usage_Plan('01033108747','2022-01-01');
+
+GO
+
