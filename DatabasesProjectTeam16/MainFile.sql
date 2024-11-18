@@ -362,30 +362,13 @@ GO
  CREATE PROCEDURE Account_Plan 
 	AS
 	BEGIN
-	select c.mobileNo , sp.planID
-		from Customer_Account c, Service_Plan sp, Subscription su
-			where c.mobileNo = su.mobileNo AND sp.planID = su.planID;
+	SELECT c.mobileNo , sp.planID
+		FROM Customer_Account c, Service_Plan sp, Subscription su
+			WHERE c.mobileNo = su.mobileNo AND sp.planID = su.planID;
 	END
 
 EXEC Account_Plan
 GO
-
-
-
-CREATE FUNCTION calculate_remaining_balance (@paymentID INT, @planID INT)
-RETURNS INT
-AS
-BEGIN
-	DECLARE @amount INT, @price INT
-	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
-	INNER JOIN Payment ON @paymentID = Payment.paymentID 
-	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
-	IF @amount > @price
-		RETURN @amount - @price
-	RETURN 0
-END
-
-GO 
 
 CREATE Function Account_Plan_date (@Subscription_Date date, @Plan_id int)
 returns TABLE
@@ -393,7 +376,7 @@ AS
 RETURN(
 	SELECT c.mobileNo, sp.name , sp.planID
 	FROM Customer_Account c, Service_Plan sp, Subscription s
-	where c.mobileNo = s.mobileNo AND sp.planID = s.planID
+	WHERE c.mobileNo = s.mobileNo AND sp.planID = s.planID
 	AND s.planID = @Plan_id AND s.subscription_date = @Subscription_Date
 );
 GO
@@ -407,7 +390,7 @@ AS
 RETURN(
 		SELECT p.planID , p.data_consumption,p.minutes_used, p.SMS_sent
 		FROM Plan_Usage p
-		where p.mobileNo = @MobileNo AND p.start_date = @from_date
+		WHERE p.mobileNo = @MobileNo AND p.start_date = @from_date
 );
 GO
 
@@ -415,8 +398,125 @@ SELECT * FROM dbo.Account_Usage_Plan('01033108747','2022-01-01');
 
 GO
 
----------------------------------------------------------- Ali
+CREATE PROCEDURE Benefits_Account (@MobileNo char(11),@planID int)
 
+	AS
+
+	BEGIN
+
+	delete FROM Plan_Provides_Benefits WHERE exists(
+		SELECT  1
+		FROM Plan_Provides_Benefits p
+		INNER JOIN benefits b on b.benefitID = p.benefitID
+		WHERE Plan_Provides_Benefits.planID = @planID AND Benefits.mobileNo = @MobileNo
+		)
+
+	END
+
+GO
+
+--i dont get when an offer is of type SMS
+CREATE FUNCTION Account_SMS_Offers (@MobileNo char(11))
+RETURNS TABLE
+AS
+RETURN(
+		SELECT e.SMS_offered
+		FROM Exclusive_Offer e
+			INNER JOIN Benefits b ON b.benefitID = e.benefitID
+		WHERE b.mobileNo=@MobileNo AND e.internet_offered=0 AND e.minutes_offered=0
+		
+
+);
+
+GO
+SELECT * FROM dbo.Account_SMS_Offers('01033108747');
+GO
+
+
+-- are accepeted payments those that are in the payments table or the process_payment table
+-- i think i cooked here 🙌
+CREATE PROCEDURE Account_Payment_Points (
+@MobileNo char(11),
+@Payment_Count INT OUTPUT,
+@Points_Count INT OUTPUT
+)
+AS
+BEGIN
+	SELECT @Payment_Count = count(*)
+	FROM Payment p
+	where p.mobileNo = @MobileNo AND p.date_of_payment >= DATEADD(YEAR, -1, GETDATE())
+
+	SELECT @Points_Count = sum(p.pointsAmount)
+	from Points_Group p
+		INNER JOIN Benefits b on b.benefitID = p.benefitID
+	where b.mobileNo = @MobileNo;
+END
+
+GO
+
+
+DECLARE @TotalTransactions INT;
+DECLARE @TotalPoints INT;
+
+EXEC Account_Payment_Points 
+    @MobileNo = '01033108747', 
+    @Payment_Count = @TotalTransactions OUTPUT, 
+    @Points_Count = @TotalPoints OUTPUT;
+
+-- Display the output values
+SELECT @TotalTransactions AS TotalTransactions, 
+       @TotalPoints AS TotalPoints;
+
+
+GO
+--left g for later
+
+
+CREATE FUNCTION calculate_extra_amount (@paymentID INT, @planID INT)
+RETURNS INT
+AS
+BEGIN
+	DECLARE @amount INT, @price INT
+	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
+	INNER JOIN Payment ON @paymentID = Payment.paymentID 
+	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
+	IF @price > @amount
+		RETURN @price - @amount
+	RETURN 0
+END
+
+GO
+
+--made the average a decimal because im skibidi sigma like that
+--im assuming that "Sent transaction amounts" means that we are working with WalletID 1 and not 2
+ALTER FUNCTION Wallet_Transfer_Amount (@Wallet_id int,@start_date date,@end_date date)
+returns DECIMAL(10,2)
+AS
+BEGIN
+	DECLARE @Transaction_Average decimal(10,2)
+	SELECT @Transaction_Average = avg(t.amount)
+	FROM Transfer_Money t
+	WHERE t.walletID1 = @Wallet_id AND t.transfer_date BETWEEN @start_date AND @end_date;
+return @Transaction_Average
+END
+GO
+
+SELECT dbo.Wallet_Transfer_Amount(2, '2022-01-01', '2021-01-01') as those_who_know;
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------- Ali
+GO
 CREATE FUNCTION AccountLoginValidation (@MobileNo CHAR(11), @password VARCHAR(50))
 RETURNS BIT
 AS
