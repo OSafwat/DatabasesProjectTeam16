@@ -290,6 +290,37 @@ BEGIN
 	DROP FUNCTION calculate_extra_amount;
 	DROP PROCEDURE clearAllTables;
 	DROP PROCEDURE dropAllTables;
+	DROP VIEW allCustomerAccounts;
+	DROP VIEW allServicePlans;
+	DROP VIEW allBenefits;
+	DROP VIEW accountPayments;
+	DROP VIEW allShops;
+	DROP VIEW allResolvedTickets;
+	DROP VIEW CustomerWallet;
+	DROP VIEW E_shopVouchers;
+	DROP VIEW PhysicalStoreVouchers;
+	DROP VIEW Num_of_cashback;
+	DROP PROCEDURE Account_Plan;
+	DROP FUNCTION Account_Plan_date;
+	DROP FUNCTION Account_Usage_Plan;
+	DROP PROCEDURE Benefits_Account;
+	DROP FUNCTION Account_SMS_Offers;
+	DROP PROCEDURE Account_Payment_Points;
+	DROP FUNCTION Wallet_Cashback_Amount;
+	DROP FUNCTION calculate_extra_amount;
+	DROP FUNCTION Wallet_Transfer_Amount;
+	DROP FUNCTION Wallet_MobileNo;
+	DROP FUNCTION Total_Points_Account;
+	DROP FUNCTION AccountLoginValidation;
+	DROP PROCEDURE Unsubscribed_Plans;
+	DROP FUNCTION Consumption;
+	DROP FUNCTION Usage_Plan_CurrentMonth;
+	DROP FUNCTION Cashback_Wallet_Customer;
+	DROP FUNCTION Ticket_Account_Customer;
+	DROP PROCEDURE Account_Highest_Voucher;
+	DROP FUNCTION Remaining_plan_amount;
+	DROP FUNCTION Extra_plan_amount;
+	DROP PROCEDURE Top_Successful_Payments;
 END
 GO
 
@@ -433,7 +464,7 @@ SELECT * FROM dbo.Account_SMS_Offers('01033108747');
 GO
 
 
--- are accepeted payments those that are in the payments table or the process_payment table
+-- are accepted payments those that are in the payments table or the process_payment table
 -- i think i cooked here 🙌
 CREATE PROCEDURE Account_Payment_Points (
 @MobileNo char(11),
@@ -668,7 +699,7 @@ SELECT @Voucher_idd as voucher_id;
 GO
 
 
--- i dont know what they mean by 'remaining amount', remaining what? data? minutes? SMS?
+-- i dont know what they mean by 'remaining amount', remaining what? data? minutes? SMS? apples? bananas? oranges? pencils?
 CREATE FUNCTION Remaining_plan_amount (@MobileNo char(11),@plan_name varchar(50))
 returns int
 AS
