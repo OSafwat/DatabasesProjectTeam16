@@ -560,18 +560,6 @@ END;
 GO
 
 select dbo.Total_Points_Account('01033108747') as Dokki;
-	
-		
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -653,4 +641,91 @@ RETURN (
 )
 END
 
+
+
+---------------------------------------------------------------------------------tofy #2
 GO
+
+CREATE PROCEDURE Account_Highest_Voucher (
+@MobileNo char(11),
+@Voucher_id int OUTPUT
+)
+AS
+BEGIN
+	SELECT @Voucher_id = max(v.value)
+	FROM Voucher v
+	where v.mobileNo = @MobileNo;
+END
+
+DECLARE @Voucher_idd int
+
+Exec Account_Highest_Voucher
+	@MobileNo = '01033108747',
+	@Voucher_id = @Voucher_idd OUTPUT;
+
+SELECT @Voucher_idd as voucher_id;
+
+GO
+
+
+-- i dont know what they mean by 'remaining amount', remaining what? data? minutes? SMS?
+CREATE FUNCTION Remaining_plan_amount (@MobileNo char(11),@plan_name varchar(50))
+returns int
+AS
+BEGIN
+	DECLARE @Remainder int
+	DECLARE @T1 int
+	DECLARE @T2 int
+
+	SELECT @T1 = s.data_offered , @T2 = p.data_consumption
+	from Service_Plan s
+		INNER JOIN Plan_Usage p on p.planID = s.planID
+	where s.name = @plan_name AND p.mobileNo = @MobileNo;
+
+SET @Remainder = @T1 - @T2
+return @Remainder
+
+END;
+
+GO
+
+SELECT dbo.Remaining_plan_amount ('01033108747','DIDDY_PARTY') as QUANDALE_DINGLE; 
+
+GO
+
+--im not confindent in which tables i used
+CREATE FUNCTION Extra_plan_amount (@MobileNo char(11),@plan_name varchar(50))
+returns int
+AS
+BEGIN
+	DECLARE @Extra_Amount int
+	SELECT @Extra_Amount = pp.extra_amount
+	from Payment pa
+		INNER JOIN Process_Payment pp on pp.paymentID = pa.paymentID
+		INNER JOIN Service_Plan sp on sp.planID = pp.planID
+	where sp.name = @plan_name AND pa.mobileNo = @MobileNo
+return @Extra_Amount
+END
+
+GO
+SELECT dbo.Extra_plan_amount ('01033108747','Livvy Dunn') as zaflat;
+
+
+GO
+CREATE PROCEDURE Top_Successful_Payments (@MobileNo char(11))
+AS
+	SELECT TOP 10 p.amount
+	FROM Payment p
+	where p.mobileNo = @MobileNo
+	Order by p.amount desc;
+
+
+EXEC Top_Successful_Payments '01033108747';
+
+GO
+
+
+
+
+
+
