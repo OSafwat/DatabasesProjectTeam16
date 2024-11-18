@@ -463,13 +463,25 @@ EXEC Account_Payment_Points
     @Payment_Count = @TotalTransactions OUTPUT, 
     @Points_Count = @TotalPoints OUTPUT;
 
--- Display the output values
 SELECT @TotalTransactions AS TotalTransactions, 
        @TotalPoints AS TotalPoints;
 
 
 GO
---left g for later
+
+--i have no idea how to do this,
+CREATE FUNCTION Wallet_Cashback_Amount(@WalletId int,@planId int)
+returns int
+AS
+BEGIN
+	DECLARE @Cashback_Amount int
+	select @Cashback_Amount = c
+	from Cashback c
+return @cashback_Amount
+END
+
+
+GO
 
 
 CREATE FUNCTION calculate_extra_amount (@paymentID INT, @planID INT)
@@ -502,6 +514,54 @@ END
 GO
 
 SELECT dbo.Wallet_Transfer_Amount(2, '2022-01-01', '2021-01-01') as those_who_know;
+
+
+GO
+
+CREATE FUNCTION Wallet_MobileNo (@MobileNo char(11))
+returns bit
+AS
+BEGIN
+	DECLARE @Output_Bit BIT 
+	IF EXISTS( 
+		SELECT 1 
+		FROM Wallet t 
+		WHERE t.mobileNo = @MobileNo
+		) 
+	BEGIN 
+		SET @Output_Bit = 1;
+	END 
+	ELSE
+		BEGIN 
+			SET @Output_Bit = 0;
+		END 
+			RETURN @Output_Bit; 
+END
+
+GO
+	
+SELECT dbo.Wallet_MobileNo('01033108747') as result;
+
+GO
+
+-- i am not confindent in connecting Mobile NO. with points using payment
+CREATE FUNCTION Total_Points_Account (@MobileNo char(11))
+returns int
+AS
+BEGIN
+DECLARE @Sum INT
+	SELECT @sum = sum(pg.pointsAmount)
+	FROM Payment p
+		inner join Points_Group pg on pg.paymentID = p.paymentID
+	where p.mobileNo = @MobileNo
+return @sum
+END;
+
+GO
+
+select dbo.Total_Points_Account('01033108747') as Dokki;
+	
+		
 
 
 
