@@ -500,15 +500,18 @@ SELECT @TotalTransactions AS TotalTransactions,
 
 GO
 
---i have no idea how to do this,
-CREATE FUNCTION Wallet_Cashback_Amount(@WalletId int,@planId int)
-returns int
+
+CREATE FUNCTION Wallet_Cashback_Amount (@WalletId INT, @PlanId INT)
+RETURNS INT
 AS
 BEGIN
-	DECLARE @Cashback_Amount int
-	select @Cashback_Amount = c
-	from Cashback c
-return @cashback_Amount
+	DECLARE @CashbackReturned INT
+	SELECT @CashbackReturned = SUM(C.amount) 
+	FROM Wallet W 
+	INNER JOIN Cashback C ON C.walletID = W.walletID
+	INNER JOIN Plan_Provides_Benefits P ON P.benefitID = C.benefitID
+	WHERE P.planID = @PlanId
+	RETURN @CashbackReturned
 END
 
 
