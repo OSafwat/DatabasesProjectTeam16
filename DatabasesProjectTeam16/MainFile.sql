@@ -508,7 +508,7 @@ BEGIN
 	FROM Wallet W 
 	INNER JOIN Cashback C ON C.walletID = W.walletID
 	INNER JOIN Plan_Provides_Benefits P ON P.benefitID = C.benefitID
-	WHERE P.planID = @PlanId
+	WHERE P.planID = @PlanId AND W.walletID = @WalletId
 	RETURN @CashbackReturned
 END
 
