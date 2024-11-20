@@ -232,26 +232,25 @@ GO
 CREATE PROCEDURE clearAllTables
 AS
 BEGIN
-	DELETE FROM Customer_Profile;
-	DELETE FROM Customer_Account;
-	DELETE FROM Service_Plan;
-	DELETE FROM Subscription;
-	DELETE FROM Plan_Usage;
-	DELETE FROM Payment;
-	DELETE FROM Process_Payment;
-	DELETE FROM Wallet;
-	DELETE FROM Transfer_Money;
-	DELETE FROM Benefits;
-	DELETE FROM Points_Group;
-	DELETE FROM Exclusive_Offer;
-	DELETE FROM Cashback;
-	DELETE FROM Plan_Provides_Benefits;
-	DELETE FROM Shop;
-	DELETE FROM Physical_Shop;
-	DELETE FROM E_Shop;
-	DELETE FROM Voucher;
-	DELETE FROM Technical_Support_Ticket;
-
+	TRUNCATE TABLE Technical_Support_Ticket
+	TRUNCATE TABLE Voucher
+	TRUNCATE TABLE E_Shop
+	TRUNCATE TABLE Physical_Shop
+	TRUNCATE TABLE Shop
+	TRUNCATE TABLE Plan_Provides_Benefits
+	TRUNCATE TABLE Cashback
+	TRUNCATE TABLE Exclusive_Offer
+	TRUNCATE TABLE Points_Group
+	TRUNCATE TABLE Benefits
+	TRUNCATE TABLE Transfer_Money
+	TRUNCATE TABLE Wallet
+	TRUNCATE TABLE Process_Payment
+	TRUNCATE TABLE Payment
+	TRUNCATE TABLE Plan_Usage
+	TRUNCATE TABLE Subscription
+	TRUNCATE TABLE Service_Plan
+	TRUNCATE TABLE Customer_Account
+	TRUNCATE TABLE Customer_Profile
 END
 
 GO
@@ -387,101 +386,100 @@ GO
  -------------------------------------------------------------------------------tofy---
  exec dbo.createAllTables
  
- CREATE ROLE Admin;
-
  GO
- CREATE PROCEDURE Account_Plan 
-	AS
-	BEGIN
-	SELECT c.mobileNo , sp.planID
-		FROM Customer_Account c, Service_Plan sp, Subscription su
-			WHERE c.mobileNo = su.mobileNo AND sp.planID = su.planID;
-	END
 
-EXEC Account_Plan
+CREATE PROCEDURE Account_Plan 
+AS
+BEGIN
+	SELECT c.mobileNo, c.name AS customer_name, su.planID, sp.name AS plan_name
+	FROM Customer_Account c
+	INNER JOIN Service_Plan sp ON c.mobileNo = sp.mobileNo
+	INNER JOIN Subscription su ON sp.planID = sp.planID
+END
+
 GO
 
-CREATE Function Account_Plan_date (@Subscription_Date date, @Plan_id int)
-returns TABLE
+CREATE FUNCTION Account_Plan_Date (@Subscription_Date DATE, @Plan_id INT)
+RETURNS TABLE
 AS
-RETURN(
-	SELECT c.mobileNo, sp.name , sp.planID
-	FROM Customer_Account c, Service_Plan sp, Subscription s
-	WHERE c.mobileNo = s.mobileNo AND sp.planID = s.planID
-	AND s.planID = @Plan_id AND s.subscription_date = @Subscription_Date
-);
+RETURN (
+	SELECT CA.mobileNo, S.planID, SP.name AS plan_name
+	FROM Customer_Account CA 
+	INNER JOIN Subscription S ON S.mobileNo = CA.mobileNo
+	INNER JOIN Service_Plan SP ON S.planID = SP.planID
+	WHERE @Plan_id = S.planID AND @Subscription_Date = S.subscription_date
+)
+
 GO
 
 SELECT * FROM dbo.Account_Plan_date('2022-01-01', 3);
 GO
 
-CREATE FUNCTION Account_Usage_Plan (@MobileNo char(11),@from_date date)
-returns TABLE
+CREATE FUNCTION Account_Usage_Plan (@MobileNo CHAR(11), @from_date DATE)
+RETURNS TABLE
 AS
-RETURN(
-		SELECT p.planID , p.data_consumption,p.minutes_used, p.SMS_sent
-		FROM Plan_Usage p
-		WHERE p.mobileNo = @MobileNo AND p.start_date = @from_date
-);
+RETURN (
+	SELECT planID, SUM(data_consumption) AS total_data, SUM(minutes_used) AS total_minutes, SUM(SMS_sent) AS total_SMS
+	FROM Plan_Usage
+	WHERE @MobileNo = mobileNo AND @from_date <= start_date
+	GROUP BY planID
+)
+
 GO
 
 SELECT * FROM dbo.Account_Usage_Plan('01033108747','2022-01-01');
 
 GO
 
-CREATE PROCEDURE Benefits_Account (@MobileNo char(11),@planID int)
+CREATE PROCEDURE Benefits_Account
+@MobileNo CHAR(11),
+@planID INT
+AS
+	WITH benefitsToDelete AS (
+		SELECT B.benefitID AS idsToDelete
+		FROM Benefits B
+		INNER JOIN Plan_Provides_Benefits PB ON B.benefitID = PB.benefitID
+		WHERE @MobileNo = B.mobileNo AND @planID = PB.planID
+	)
 
-	AS
-
-	BEGIN
-
-	delete FROM Plan_Provides_Benefits WHERE exists(
-		SELECT  1
-		FROM Plan_Provides_Benefits p
-		INNER JOIN benefits b on b.benefitID = p.benefitID
-		WHERE Plan_Provides_Benefits.planID = @planID AND Benefits.mobileNo = @MobileNo
-		)
-
-	END
+	DELETE FROM Benefits
+	WHERE EXISTS (
+		SELECT 1
+		FROM benefitsToDelete 
+		WHERE benefitID = idsToDelete
+	)
 
 GO
 
---i dont get when an offer is of type SMS
 CREATE FUNCTION Account_SMS_Offers (@MobileNo char(11))
 RETURNS TABLE
 AS
-RETURN(
-		SELECT e.SMS_offered
+RETURN (
+		SELECT b.benefitID, e. offerID, e.SMS_offered
 		FROM Exclusive_Offer e
-			INNER JOIN Benefits b ON b.benefitID = e.benefitID
-		WHERE b.mobileNo=@MobileNo AND e.internet_offered=0 AND e.minutes_offered=0
-		
-
+		INNER JOIN Benefits b ON b.benefitID = e.benefitID
+		WHERE b.mobileNo = @MobileNo AND SMS_offered > 0
 );
 
 GO
-SELECT * FROM dbo.Account_SMS_Offers('01033108747');
-GO
 
+SELECT * FROM dbo.Account_SMS_Offers('01033108747');
+
+GO
 
 -- are accepted payments those that are in the payments table or the process_payment table
 -- i think i cooked here 🙌
-CREATE PROCEDURE Account_Payment_Points (
-@MobileNo char(11),
-@Payment_Count INT OUTPUT,
-@Points_Count INT OUTPUT
-)
+CREATE PROCEDURE Account_Payment_Points
+@MobileNo CHAR(11),
+@TotalTransactions INT OUTPUT,
+@TotalPoints INT OUTPUT
 AS
-BEGIN
-	SELECT @Payment_Count = count(*)
-	FROM Payment p
-	where p.mobileNo = @MobileNo AND p.date_of_payment >= DATEADD(YEAR, -1, GETDATE())
+	SELECT @TotalTransactions = COUNT(*), @TotalPoints = SUM(PG.pointsAmount)
+	FROM Payment P
+	INNER JOIN Process_Payment PP ON P.paymentID = PP.paymentID
+	INNER JOIN Points_Group PG ON PG.paymentID = P.paymentID
+	WHERE P.mobileNo = @MobileNo AND P.status = 'successful' AND p.date_of_payment >= DATEADD(YEAR, -1, GETDATE())
 
-	SELECT @Points_Count = sum(p.pointsAmount)
-	from Points_Group p
-		INNER JOIN Benefits b on b.benefitID = p.benefitID
-	where b.mobileNo = @MobileNo;
-END
 
 GO
 
@@ -518,32 +516,17 @@ END
 GO
 
 
-CREATE FUNCTION calculate_extra_amount (@paymentID INT, @planID INT)
-RETURNS INT
-AS
-BEGIN
-	DECLARE @amount INT, @price INT
-	SELECT @amount = Payment.amount, @price = Service_Plan.price FROM Process_Payment
-	INNER JOIN Payment ON @paymentID = Payment.paymentID 
-	INNER JOIN Service_Plan ON @planID = Service_Plan.planID
-	IF @price > @amount
-		RETURN @price - @amount
-	RETURN 0
-END
-
-GO
-
---made the average a decimal because im skibidi sigma like that
 --im assuming that "Sent transaction amounts" means that we are working with WalletID 1 and not 2
-ALTER FUNCTION Wallet_Transfer_Amount (@Wallet_id int,@start_date date,@end_date date)
-returns DECIMAL(10,2)
+-- you cooked here tofy - Ali
+CREATE FUNCTION Wallet_Transfer_Amount (@Wallet_id int, @start_date date, @end_date date)
+RETURNS DECIMAL(10,2)
 AS
 BEGIN
-	DECLARE @Transaction_Average decimal(10,2)
-	SELECT @Transaction_Average = avg(t.amount)
+	DECLARE @Transaction_Average DECIMAL(10,2)
+	SELECT @Transaction_Average = AVG(t.amount)
 	FROM Transfer_Money t
 	WHERE t.walletID1 = @Wallet_id AND t.transfer_date BETWEEN @start_date AND @end_date;
-return @Transaction_Average
+	RETURN @Transaction_Average
 END
 GO
 
@@ -553,23 +536,23 @@ SELECT dbo.Wallet_Transfer_Amount(2, '2022-01-01', '2021-01-01') as those_who_kn
 GO
 
 CREATE FUNCTION Wallet_MobileNo (@MobileNo char(11))
-returns bit
+RETURNS BIT
 AS
 BEGIN
 	DECLARE @Output_Bit BIT 
-	IF EXISTS( 
+	IF EXISTS ( 
 		SELECT 1 
 		FROM Wallet t 
 		WHERE t.mobileNo = @MobileNo
-		) 
+	) 
 	BEGIN 
 		SET @Output_Bit = 1;
 	END 
 	ELSE
-		BEGIN 
-			SET @Output_Bit = 0;
-		END 
-			RETURN @Output_Bit; 
+	BEGIN 
+		SET @Output_Bit = 0;
+	END 
+	RETURN @Output_Bit; 
 END
 
 GO
@@ -578,18 +561,19 @@ SELECT dbo.Wallet_MobileNo('01033108747') as result;
 
 GO
 
--- i am not confindent in connecting Mobile NO. with points using payment
-CREATE FUNCTION Total_Points_Account (@MobileNo char(11))
-returns int
+
+CREATE PROCEDURE Total_Points_Account
+@MobileNo CHAR(11)
 AS
-BEGIN
-DECLARE @Sum INT
-	SELECT @sum = sum(pg.pointsAmount)
-	FROM Payment p
-		inner join Points_Group pg on pg.paymentID = p.paymentID
-	where p.mobileNo = @MobileNo
-return @sum
-END;
+	DECLARE @totalPoints INT
+	SELECT @totalPoints = SUM(P.pointsAmount)
+	FROM Points_Group P
+	INNER JOIN Benefits B ON P.benefitID = B.benefitID
+	WHERE B.mobileNo = @MobileNo
+
+	UPDATE Customer_Account
+	SET points = @totalPoints
+	WHERE mobileNo = @MobileNo
 
 GO
 
@@ -631,22 +615,24 @@ CREATE FUNCTION Consumption (@Plan_Name VARCHAR(50), @start_date DATE, @end_date
 RETURNS TABLE
 AS
 RETURN (
-	SELECT SUM(data_consumption) AS total_data, SUM(minutes_used) AS total_minutes, SUM(SMS_sent) AS total_SMS
+	SELECT mobileNo, SUM(data_consumption) as total_data, SUM(minutes_used) as total_minutes, SUM(SMS_sent) AS total_SMS
 	FROM Plan_Usage
-	WHERE start_date BETWEEN @start_date AND @end_date AND end_date BETWEEN @start_date AND @end_date
+	WHERE start_date >= @start_date AND end_date <= @end_date
+	GROUP BY mobileNo
 )
 
 GO
 
 -- unsure about what dates im supposed to compare with - Ali
-CREATE FUNCTION Usage_Plan_CurrentMonth (@MobileNo CHAR(11))
+CREATE FUNCTION Usage_Plan_CurrentMonth
+(@MobileNo CHAR(11))
 RETURNS TABLE
 AS
 RETURN (
 	SELECT PU.data_consumption, PU.minutes_used, PU.SMS_sent
 	FROM Plan_Usage PU
 	INNER JOIN Subscription S ON S.planID = PU.planID
-	WHERE @MobileNo = PU.mobileNo AND S.status = 'active' AND MONTH(S.subscription_date) = MONTH(GETDATE())
+	WHERE @MobileNo = PU.mobileNo AND S.status = 'active' AND (MONTH(GETDATE()) = MONTH(PU.start_date) OR MONTH(GETDATE()) = MONTH(PU.end_date))
 )
 
 GO
@@ -663,16 +649,15 @@ RETURN (
 )
 GO
 
-CREATE FUNCTION Ticket_Account_Customer (@NationalID INT)
-RETURNS INT
+CREATE PROCEDURE Ticket_Account_Customer 
+@NationalID INT,
+@SupportTickets INT OUTPUT
 AS
 BEGIN
-RETURN (
-	SELECT COUNT(*)
+	SELECT @SupportTickets = COUNT(*)
 	FROM Technical_Support_Ticket T
 	INNER JOIN Customer_Account C ON T.mobileNo = C.mobileNo
-	WHERE T.status <> 'resolved' AND @NationalID = C.nationalID
-)
+	WHERE T.status <> 'resolved' AND C.nationalID = @NationalID
 END
 
 
@@ -680,24 +665,18 @@ END
 ---------------------------------------------------------------------------------tofy #2
 GO
 
-CREATE PROCEDURE Account_Highest_Voucher (
-@MobileNo char(11),
-@Voucher_id int OUTPUT
-)
-AS
-BEGIN
-	SELECT @Voucher_id = max(v.value)
-	FROM Voucher v
-	where v.mobileNo = @MobileNo;
-END
+CREATE PROCEDURE Account_Highest_Voucher
+@MobileNo CHAR(11),
+@VoucherID INT OUTPUT
+AS 
+	DECLARE @maxValue INT
+	SELECT @maxValue = MAX(value)
+	FROM Voucher
+	WHERE @MobileNo = mobileNo
 
-DECLARE @Voucher_idd int
-
-Exec Account_Highest_Voucher
-	@MobileNo = '01033108747',
-	@Voucher_id = @Voucher_idd OUTPUT;
-
-SELECT @Voucher_idd as voucher_id;
+	SELECT TOP 1 @VoucherID = voucherID
+	FROM Voucher
+	WHERE value = @maxValue
 
 GO
 
@@ -748,15 +727,95 @@ SELECT dbo.Extra_plan_amount ('01033108747','Livvy Dunn') as zaflat;
 GO
 CREATE PROCEDURE Top_Successful_Payments (@MobileNo char(11))
 AS
-	SELECT TOP 10 p.amount
+	SELECT TOP 10 p.paymentID, p.amount, p.date_of_payment
 	FROM Payment p
 	where p.mobileNo = @MobileNo
 	Order by p.amount desc;
 
 
-EXEC Top_Successful_Payments '01033108747';
+GO
+
+CREATE FUNCTION Subscribed_plans_5_Months (@MobileNo CHAR(11))
+RETURNS TABLE
+AS
+RETURN (
+	SELECT SP.planID, SP.name, S.status
+	FROM Service_Plan SP
+	INNER JOIN Subscription S ON S.planID = SP.planID
+	WHERE S.subscription_date >= DATEADD(MONTH, -5, GETDATE()) AND S.mobileNo = @MobileNo
+)
 
 GO
+
+CREATE PROCEDURE Initiate_plan_payment
+@MobileNo CHAR(11),
+@amount DECIMAL(10,1),
+@payment_method VARCHAR(50),
+@plan_id INT
+AS
+BEGIN
+	INSERT INTO Payment VALUES (@amount, GETDATE(), @payment_method, 'successful', @MobileNo)
+	DECLARE @payment_id INT
+	SELECT @payment_id = MAX(paymentID) FROM Payment
+	INSERT INTO Process_Payment VALUES (@payment_id, @plan_id)
+	
+	DECLARE @remaining_balance DECIMAL(10, 1)
+	SELECT @remaining_balance = remaining_balance FROM Process_Payment WHERE paymentID = @payment_id
+
+	-- what if they have extra amounts or remaining balances accumulated from previous payments? not sure how to handle
+	IF @remaining_balance = 0
+	BEGIN
+		UPDATE Subscription
+		SET status = 'active'
+		WHERE planID = @plan_id AND mobileNo = @MobileNo
+	END
+END
+
+GO
+
+CREATE PROCEDURE Initiate_balance_payment
+@MobileNo CHAR(11),
+@amount DECIMAL(10, 1),
+@payment_method VARCHAR(50)
+AS
+BEGIN
+	INSERT INTO Payment VALUES (@amount, GETDATE(), @payment_method, 'successful', @MobileNo)
+	
+	UPDATE Customer_Account
+	SET balance = balance + @amount
+	WHERE mobileNo = @MobileNo
+END
+
+GO
+
+CREATE PROCEDURE Redeem_voucher_points
+@MobileNo CHAR(11),
+@voucher_id INT
+AS
+	DECLARE @userPoints INT 
+	SELECT @userPoints = points
+	FROM Customer_Account
+	WHERE mobileNo = @MobileNo
+
+	DECLARE @voucherPoints INT
+	SELECT @voucherPoints = points
+	FROM Voucher 
+	WHERE voucherID = @voucher_id
+
+	IF EXISTS (
+		SELECT 1 
+		FROM Voucher 
+		WHERE voucherID = @voucher_id AND GETDATE() < expiry_date AND redeem_date IS NULL
+	) AND @userPoints >= @voucherPoints
+	BEGIN
+		UPDATE Voucher 
+		SET mobileNo = @MobileNo, redeem_date = GETDATE()
+		WHERE voucherID = @voucher_id
+
+		UPDATE Customer_Account
+		SET points = points - @voucherPoints
+		WHERE mobileNo = @MobileNo
+	END
 
 
 
