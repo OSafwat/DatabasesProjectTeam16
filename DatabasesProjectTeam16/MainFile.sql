@@ -505,10 +505,9 @@ AS
 BEGIN
 	DECLARE @CashbackReturned INT
 	SELECT @CashbackReturned = SUM(C.amount) 
-	FROM Wallet W 
-	INNER JOIN Cashback C ON C.walletID = W.walletID
+	FROM Cashback C
 	INNER JOIN Plan_Provides_Benefits P ON P.benefitID = C.benefitID
-	WHERE P.planID = @PlanId AND W.walletID = @WalletId
+	WHERE P.planID = @PlanId AND C.walletID = @WalletId
 	RETURN @CashbackReturned
 END
 
