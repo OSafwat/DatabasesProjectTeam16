@@ -232,25 +232,25 @@ GO
 CREATE PROCEDURE clearAllTables
 AS
 BEGIN
-	TRUNCATE TABLE Technical_Support_Ticket
-	TRUNCATE TABLE Voucher
-	TRUNCATE TABLE E_Shop
-	TRUNCATE TABLE Physical_Shop
-	TRUNCATE TABLE Shop
-	TRUNCATE TABLE Plan_Provides_Benefits
-	TRUNCATE TABLE Cashback
-	TRUNCATE TABLE Exclusive_Offer
-	TRUNCATE TABLE Points_Group
-	TRUNCATE TABLE Benefits
-	TRUNCATE TABLE Transfer_Money
-	TRUNCATE TABLE Wallet
-	TRUNCATE TABLE Process_Payment
-	TRUNCATE TABLE Payment
-	TRUNCATE TABLE Plan_Usage
-	TRUNCATE TABLE Subscription
-	TRUNCATE TABLE Service_Plan
-	TRUNCATE TABLE Customer_Account
-	TRUNCATE TABLE Customer_Profile
+	DELETE FROM Technical_Support_Ticket
+	DELETE FROM Voucher
+	DELETE FROM E_Shop
+	DELETE FROM Physical_Shop
+	DELETE FROM Shop
+	DELETE FROM Plan_Provides_Benefits
+	DELETE FROM Cashback
+	DELETE FROM Exclusive_Offer
+	DELETE FROM Points_Group
+	DELETE FROM Benefits
+	DELETE FROM Transfer_Money
+	DELETE FROM Wallet
+	DELETE FROM Process_Payment
+	DELETE FROM Payment
+	DELETE FROM Plan_Usage
+	DELETE FROM Subscription
+	DELETE FROM Service_Plan
+	DELETE FROM Customer_Account
+	DELETE FROM Customer_Profile
 END
 
 GO
