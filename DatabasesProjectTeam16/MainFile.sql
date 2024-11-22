@@ -1,10 +1,12 @@
-﻿CREATE DATABASE Telecom_Team_16
+﻿-- 2.1a
+CREATE DATABASE Telecom_Team_16
 GO
    
 USE Telecom_Team_16
    
 GO 
 
+-- 2.1b
 CREATE PROCEDURE createAllTables
 AS
 BEGIN
@@ -229,32 +231,7 @@ END
 
 GO
 
-CREATE PROCEDURE clearAllTables
-AS
-BEGIN
-	DELETE FROM Technical_Support_Ticket
-	DELETE FROM Voucher
-	DELETE FROM E_Shop
-	DELETE FROM Physical_Shop
-	DELETE FROM Shop
-	DELETE FROM Plan_Provides_Benefits
-	DELETE FROM Cashback
-	DELETE FROM Exclusive_Offer
-	DELETE FROM Points_Group
-	DELETE FROM Benefits
-	DELETE FROM Transfer_Money
-	DELETE FROM Wallet
-	DELETE FROM Process_Payment
-	DELETE FROM Payment
-	DELETE FROM Plan_Usage
-	DELETE FROM Subscription
-	DELETE FROM Service_Plan
-	DELETE FROM Customer_Account
-	DELETE FROM Customer_Profile
-END
-
-GO
-
+-- 2.1c
 CREATE PROCEDURE dropAllTables
 AS
 BEGIN
@@ -278,9 +255,10 @@ BEGIN
 	DROP TABLE Customer_Account;
 	DROP TABLE Customer_Profile;
 END
+
 GO
 
-
+-- 2.1d
 CREATE PROCEDURE dropAllProceduresFunctionsViews
 AS
 BEGIN
@@ -321,66 +299,112 @@ BEGIN
 	DROP FUNCTION Extra_plan_amount;
 	DROP PROCEDURE Top_Successful_Payments;
 END
+
 GO
 
+-- 2.1e
+CREATE PROCEDURE clearAllTables
+AS
+BEGIN
+	DELETE FROM Technical_Support_Ticket
+	DELETE FROM Voucher
+	DELETE FROM E_Shop
+	DELETE FROM Physical_Shop
+	DELETE FROM Shop
+	DELETE FROM Plan_Provides_Benefits
+	DELETE FROM Cashback
+	DELETE FROM Exclusive_Offer
+	DELETE FROM Points_Group
+	DELETE FROM Benefits
+	DELETE FROM Transfer_Money
+	DELETE FROM Wallet
+	DELETE FROM Process_Payment
+	DELETE FROM Payment
+	DELETE FROM Plan_Usage
+	DELETE FROM Subscription
+	DELETE FROM Service_Plan
+	DELETE FROM Customer_Account
+	DELETE FROM Customer_Profile
+END
+
+GO
+
+-- 2.2a
 CREATE VIEW allCustomerAccounts AS
-SELECT * FROM Customer_Profile P JOIN Customer_Account A ON P.national_id = A.national_id; 
+SELECT * FROM Customer_Profile P 
+INNER JOIN Customer_Account A ON P.national_id = A.national_id; 
 
 GO
 
+-- 2.2b
 CREATE VIEW allServicePlans AS
 SELECT * FROM Service_Plan;
 
 GO
 
+
+-- 2.2c
 CREATE VIEW allBenefits AS
 SELECT * From Benefits B 
 WHERE B.status = 'active';
 
 GO
 
+-- 2.2d
 CREATE VIEW accountPayments AS
-Select * FROM Payments P JOIN Customer_Account A ON P.mobileNo = A.mobileNo;
+Select * FROM Payments P 
+INNER JOIN Customer_Account A ON P.mobileNo = A.mobileNo;
 
 GO
 
+-- 2.2e
 CREATE VIEW allShops AS
-	SELECT * FROM Shop;
+SELECT * FROM Shop;
 
 GO
 
+
+-- 2.2f
 CREATE VIEW allResolvedTickets AS
-	SELECT * FROM Technical_Support_Ticket
-		WHERE status = 'Resolved';
+SELECT * FROM Technical_Support_Ticket
+WHERE status = 'Resolved';
 
 GO
 
+
+-- 2.2g
 CREATE VIEW CustomerWallet AS
-	SELECT W.*, CONCAT(C.firstName, ' ', C.lastName) AS customerName
-		FROM Wallet W
-			JOIN Customer_Profile C ON W.nationalID = C.nationalID;
+SELECT W.*, CONCAT(C.first_name, ' ', C.last_name) AS customerName
+FROM Wallet W
+INNER JOIN Customer_Profile C ON W.nationalID = C.nationalID;
 GO
 
+-- 2.2h
 CREATE VIEW E_shopVouchers AS
-	SELECT E.*, V.voucherId, V.value
-		FROM E_shops E
-			JOIN Voucher V ON E.shopId = V.shopId;
+SELECT E.*, V.voucherId, V.value
+FROM E_shops E
+INNER JOIN Voucher V ON E.shopId = V.shopId
+WHERE V.redeem_date IS NOT NULL;
 			
 GO
 
+-- 2.2i
 CREATE VIEW PhysicalStoreVouchers AS
-	SELECT P.*, V.voucherId, V.value
-		FROM Physical_Shop P
-			JOIN Voucher V ON P.storeId = V.storeId;
+SELECT P.*, V.voucherId, V.value
+FROM Physical_Shop P
+INNER JOIN Voucher V ON P.shopID = V.shopID
+WHERE V.redeem_date IS NOT NULL;
 			
 
 GO 
 
+-- 2.2j
 CREATE VIEW Num_of_cashback AS
-	SELECT W.walletId, COUNT(C.cashbackID) AS cashbackCount
-		FROM Wallet W
-			JOIN Cashback C ON W.walletId = T.walletId
-					GROUP BY W.walletId;
+SELECT W.walletId, COUNT(C.cashbackID) AS cashbackCount
+FROM Wallet W
+INNER JOIN Cashback C ON W.walletId = C.walletId
+GROUP BY W.walletId;
+
 GO
 
  -------------------------------------------------------------------------------tofy---
@@ -388,6 +412,7 @@ GO
  
  GO
 
+-- 2.3a
 CREATE PROCEDURE Account_Plan 
 AS
 BEGIN
@@ -399,6 +424,7 @@ END
 
 GO
 
+-- 2.3b
 CREATE FUNCTION Account_Plan_Date (@Subscription_Date DATE, @Plan_id INT)
 RETURNS TABLE
 AS
@@ -415,6 +441,7 @@ GO
 SELECT * FROM dbo.Account_Plan_date('2022-01-01', 3);
 GO
 
+-- 2.3c
 CREATE FUNCTION Account_Usage_Plan (@MobileNo CHAR(11), @from_date DATE)
 RETURNS TABLE
 AS
@@ -431,6 +458,7 @@ SELECT * FROM dbo.Account_Usage_Plan('01033108747','2022-01-01');
 
 GO
 
+-- 2.3d
 CREATE PROCEDURE Benefits_Account
 @MobileNo CHAR(11),
 @planID INT
@@ -451,14 +479,15 @@ AS
 
 GO
 
+-- 2.3e
 CREATE FUNCTION Account_SMS_Offers (@MobileNo char(11))
 RETURNS TABLE
 AS
 RETURN (
-		SELECT b.benefitID, e. offerID, e.SMS_offered
-		FROM Exclusive_Offer e
-		INNER JOIN Benefits b ON b.benefitID = e.benefitID
-		WHERE b.mobileNo = @MobileNo AND SMS_offered > 0
+	SELECT b.benefitID, e. offerID, e.SMS_offered
+	FROM Exclusive_Offer e
+	INNER JOIN Benefits b ON b.benefitID = e.benefitID
+	WHERE b.mobileNo = @MobileNo AND SMS_offered > 0
 );
 
 GO
@@ -467,8 +496,7 @@ SELECT * FROM dbo.Account_SMS_Offers('01033108747');
 
 GO
 
--- are accepted payments those that are in the payments table or the process_payment table
--- i think i cooked here 🙌
+-- 2.3f
 CREATE PROCEDURE Account_Payment_Points
 @MobileNo CHAR(11),
 @TotalTransactions INT OUTPUT,
@@ -498,7 +526,7 @@ SELECT @TotalTransactions AS TotalTransactions,
 
 GO
 
-
+-- 2.3g
 CREATE FUNCTION Wallet_Cashback_Amount (@WalletId INT, @PlanId INT)
 RETURNS INT
 AS
@@ -515,8 +543,7 @@ END
 GO
 
 
---im assuming that "Sent transaction amounts" means that we are working with WalletID 1 and not 2
--- you cooked here tofy - Ali
+-- 2.3h
 CREATE FUNCTION Wallet_Transfer_Amount (@Wallet_id int, @start_date date, @end_date date)
 RETURNS DECIMAL(10,2)
 AS
@@ -534,6 +561,7 @@ SELECT dbo.Wallet_Transfer_Amount(2, '2022-01-01', '2021-01-01') as those_who_kn
 
 GO
 
+-- 2.3i
 CREATE FUNCTION Wallet_MobileNo (@MobileNo char(11))
 RETURNS BIT
 AS
@@ -560,7 +588,7 @@ SELECT dbo.Wallet_MobileNo('01033108747') as result;
 
 GO
 
-
+-- 2.3j
 CREATE PROCEDURE Total_Points_Account
 @MobileNo CHAR(11)
 AS
@@ -579,9 +607,11 @@ GO
 select dbo.Total_Points_Account('01033108747') as Dokki;
 
 
+GO
 
 ---------------------------------------------------------- Ali
-GO
+
+-- 2.4a
 CREATE FUNCTION AccountLoginValidation (@MobileNo CHAR(11), @password VARCHAR(50))
 RETURNS BIT
 AS
@@ -597,18 +627,7 @@ END
 
 GO
 
-CREATE PROCEDURE Unsubscribed_Plans 
-@MobileNo CHAR(11)
-AS
-SELECT SP.planID
-FROM Service_Plan SP WHERE NOT EXISTS (
-	SELECT * 
-	FROM Subscription S
-	WHERE S.planID = SP.planID AND @MobileNo = mobileNo
-)
-
-GO
-
+-- 2.4b
 -- slightly unsure about this one, but will keep it like this for now - Ali
 CREATE FUNCTION Consumption (@Plan_Name VARCHAR(50), @start_date DATE, @end_date DATE)
 RETURNS TABLE
@@ -622,6 +641,20 @@ RETURN (
 
 GO
 
+-- 2.4c
+CREATE PROCEDURE Unsubscribed_Plans 
+@MobileNo CHAR(11)
+AS
+SELECT SP.planID
+FROM Service_Plan SP WHERE NOT EXISTS (
+	SELECT * 
+	FROM Subscription S
+	WHERE S.planID = SP.planID AND @MobileNo = mobileNo
+)
+
+GO
+
+-- 2.4d
 -- unsure about what dates im supposed to compare with - Ali
 CREATE FUNCTION Usage_Plan_CurrentMonth
 (@MobileNo CHAR(11))
@@ -636,6 +669,7 @@ RETURN (
 
 GO
 
+-- 2.4e
 -- unsure what columns we're actually supposed to return - Ali
 CREATE FUNCTION Cashback_Wallet_Customer (@NationalID INT)
 RETURNS TABLE
@@ -648,6 +682,7 @@ RETURN (
 )
 GO
 
+-- 2.4f
 CREATE PROCEDURE Ticket_Account_Customer 
 @NationalID INT,
 @SupportTickets INT OUTPUT
@@ -660,10 +695,10 @@ BEGIN
 END
 
 
-
----------------------------------------------------------------------------------tofy #2
 GO
+---------------------------------------------------------------------------------tofy #2
 
+-- 2.4g
 CREATE PROCEDURE Account_Highest_Voucher
 @MobileNo CHAR(11),
 @VoucherID INT OUTPUT
@@ -679,7 +714,7 @@ AS
 
 GO
 
-
+--2.4h
 -- i dont know what they mean by 'remaining amount', remaining what? data? minutes? SMS? apples? bananas? oranges? pencils?
 CREATE FUNCTION Remaining_plan_amount (@MobileNo char(11),@plan_name varchar(50))
 returns int
@@ -705,6 +740,7 @@ SELECT dbo.Remaining_plan_amount ('01033108747','DIDDY_PARTY') as QUANDALE_DINGL
 
 GO
 
+-- 2.4i
 --im not confindent in which tables i used
 CREATE FUNCTION Extra_plan_amount (@MobileNo char(11),@plan_name varchar(50))
 returns int
@@ -722,8 +758,9 @@ END
 GO
 SELECT dbo.Extra_plan_amount ('01033108747','Livvy Dunn') as zaflat;
 
-
 GO
+
+-- 2.4j
 CREATE PROCEDURE Top_Successful_Payments (@MobileNo char(11))
 AS
 	SELECT TOP 10 p.paymentID, p.amount, p.date_of_payment
@@ -734,6 +771,7 @@ AS
 
 GO
 
+-- 2.4k
 CREATE FUNCTION Subscribed_plans_5_Months (@MobileNo CHAR(11))
 RETURNS TABLE
 AS
@@ -746,6 +784,7 @@ RETURN (
 
 GO
 
+-- 2.4l
 CREATE PROCEDURE Initiate_plan_payment
 @MobileNo CHAR(11),
 @amount DECIMAL(10,1),
@@ -772,6 +811,7 @@ END
 
 GO
 
+-- 2.4n
 CREATE PROCEDURE Initiate_balance_payment
 @MobileNo CHAR(11),
 @amount DECIMAL(10, 1),
@@ -787,6 +827,7 @@ END
 
 GO
 
+-- 2.4o
 CREATE PROCEDURE Redeem_voucher_points
 @MobileNo CHAR(11),
 @voucher_id INT
@@ -994,6 +1035,8 @@ Set Identity_insert Technical_Support_Ticket off;
 --Unable to show all tables at once
 exec GetfirstData;
 exec GETSecondDATA;
+
+
 
 
 
