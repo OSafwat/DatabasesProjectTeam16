@@ -816,8 +816,266 @@ AS
 		WHERE mobileNo = @MobileNo
 	END
 
+----------------------------------------------------Gemini
+exec dbo.dropAllTables
+Exec dbo.createAllTables
+
+
+INSERT INTO Customer_profile (nationalID, first_name, last_name, email, date_of_birth)
+VALUES
+  (0234567890, 'John', 'Doe', 'johndoe@email.com', '1990-01-01'),
+  (0076543210, 'Jane', 'Smith', 'janesmith@email.com', '1985-05-15'),
+  (00456789012, 'Michael', 'Johnson', 'michaeljohnson@email.com', '1992-11-23'),
+  (00345678901, 'Emily', 'Davis', 'emilydavis@email.com', '1988-07-18');
+
+INSERT INTO Customer_Account (mobileNo, pass, balance, account_type, start_date, status, points, nationalID)
+VALUES
+  (12345678901, 'password123', 100.0, 'Prepaid', '2023-01-01', 'Active', 500, 0234567890),
+  (98765432101, 'password456', 250.5, 'Post paid', '2022-11-22', 'Active', 1000, 0076543210),
+  (34567890121, 'password789', 150.25, 'Prepaid', '2023-03-15', 'Active', 750, 00456789012),
+  (23456789011, 'password012', 300.75, 'Post paid', '2022-12-01', 'Active', 1200, 00345678901);
+  
+
+Set Identity_insert service_plan on;
+INSERT INTO Service_Plan (planID, SMS_offered, minutes_offered, data_offered, name, price, description)
+VALUES
+  (1, 1000, 1000, 10, 'Basic Plan', 10, 'Basic plan with limited features'),
+  (2, 2000, 2000, 20, 'Standard Plan', 20, 'Standard plan with more features'),
+  (3, 3000, 3000, 30, 'Premium Plan', 30, 'Premium plan with all features'),
+  (4, 500, 500, 5, 'Mini Plan', 5, 'Minimal plan for basic usage');
+Set Identity_insert service_plan off;
+
+
+INSERT INTO Subscription (mobileNo, planID, subscription_date, status)
+VALUES
+  (12345678901, 1, '2023-01-01', 'Active'),
+  (98765432101, 2, '2022-11-22', 'Active'),
+  (34567890121, 3, '2023-04-01', 'Active'),
+  (23456789011, 4, '2023-02-15', 'Active');
+
+
+
+Set Identity_insert plan_usage on;
+INSERT INTO Plan_Usage (usageID, start_date, end_date, data_consumption, minutes_used, SMS_sent, mobileNo, planID)
+VALUES
+  (1, '2023-01-01', '2023-01-31', 5, 100, 50, 12345678901, 1),
+  (2, '2022-11-01', '2022-11-30', 15, 200, 100, 98765432101, 2),
+  (3, '2023-04-01', '2023-04-30', 25, 300, 150, 34567890121, 3),
+  (4, '2023-02-15', '2023-02-28', 2, 50, 25, 23456789011, 4);
+SET IDENTITY_INSERT Plan_Usage OFF;
+
+
+Set Identity_insert payment on;
+INSERT INTO Payment (paymentID, amount, date_of_payment, payment_method, status, mobileNo)
+VALUES
+  (1, 20.0, '2023-01-15', 'cash', 'Successful', 12345678901),
+  (2, 30.0, '2022-12-10', 'credit', 'Successful', 98765432101),
+  (3, 40.0, '2023-05-01', 'cash', 'Successful', 34567890121),
+  (4, 10.0, '2023-03-15', 'credit', 'Successful', 23456789011);
+Set Identity_insert payment off;
+
+
+INSERT INTO Process_Payment (paymentID, planID)
+VALUES
+  (1, 1),
+  (2, 2),
+  (3, 3),
+  (4, 4);
+
+
+Set Identity_insert wallet on;
+INSERT INTO Wallet (walletID, current_balance, currency, last_modified_date, nationalID, mobileNo)
+VALUES
+  (1, 100.00, 'USD', '2023-01-01', 0234567890, 12345678901),
+  (2, 200.50, 'USD', '2022-11-22', 0076543210, 98765432101),
+  (3, 150.25, 'USD', '2023-03-15', 00456789012, 34567890121),
+  (4, 300.75, 'USD', '2022-12-01', 00345678901, 23456789011);
+  Set Identity_insert wallet off;
+
+
+Set Identity_insert transfer_money on;
+INSERT INTO Transfer_money (walletID1, walletID2, transferid, amount, transfer_date)
+VALUES
+  (1, 2, 1, 50.00, '2023-02-01'),
+  (2, 1, 2, 25.00, '2023-03-15'),
+  (3, 4, 3, 75.00, '2023-04-10'),
+  (4, 3, 4, 50.00, '2023-05-05');
+Set Identity_insert transfer_money off;
+
+
+Set Identity_insert benefits on;
+INSERT INTO Benefits (benefitID, description, validity_date, status, mobileNo)
+VALUES
+  (1, '10% discount on online shopping', '2023-12-31', 'Active', 12345678901),
+  (2, 'Free movie ticket', '2024-06-30', 'Active', 98765432101),
+  (3, '20% discount on food delivery', '2023-11-30', 'Active', 34567890121),
+  (4, 'Free data bundle', '2024-01-17','Active',23456789011);
+ Set Identity_insert benefits off;
+
+
+Set Identity_insert Points_Group on;
+INSERT INTO Points_Group(pointID, benefitID, pointsAmount, PaymentID)
+VALUES
+  (1, 1, 500, 1),
+  (2, 2, 1000, 2),
+  (3, 3, 750, 3),
+  (4, 4, 100, 4);
+Set Identity_insert Points_Group off;
+
+Set Identity_insert Exclusive_Offer on;
+INSERT INTO Exclusive_Offer (offerID, benefitID, internet_offered, SMS_offered, minutes_offered)
+VALUES
+  (1, 1, 10, 1000, 1000),
+  (2, 2, 20, 2000, 2000),
+  (3, 3, 15, 1500, 1500),
+  (4, 4, 5, 500, 500);
+  Set Identity_insert Exclusive_Offer off;
+
+
+Set Identity_insert Cashback on;
+INSERT INTO Cashback (CashbackID, benefitID, walletID, amount, credit_date)
+VALUES
+  (1, 1, 1, 10.00, '2023-01-16'),
+  (2, 2, 2, 20.00, '2023-02-15'),
+  (3, 3, 3, 15.00, '2023-04-10'),
+  (4, 4, 4, 10.00, '2023-05-05');
+  Set Identity_insert Cashback off;
+
+
+INSERT INTO Plan_Provides_Benefits (benefitID, planID)
+VALUES
+  (1, 1),
+  (2, 2),
+  (3, 3),
+  (4, 4);
+
+
+Set Identity_insert shop on;
+INSERT INTO Shop (shopID, name, category)
+VALUES
+  (1, 'Online Store', 'Electronics'),
+  (2, 'Local Grocery', 'Food'),
+  (3, 'Fashion Outlet', 'Clothing'),
+  (4, 'Bookstore', 'Books');
+Set Identity_insert shop off;
+
+
+INSERT INTO Physical_Shop (shopID, address, working_hours)
+VALUES
+  (2, '123 Main St', '10:00 AM - 6:00 PM'),
+  (3, '456 Elm St', '11:00 AM - 7:00 PM'),
+  (4, '789 Oak St', '9:00 AM - 5:00 PM');
+
+INSERT INTO E_Shop (shopID, URL, rating)
+VALUES
+  (1, 'https://onlinestore.com', 4.5),
+  (3, 'https://fashionoutlet.com', 4.2),
+  (4, 'https://bookstore.com', 4.8);
+
+Set Identity_insert voucher on;
+INSERT INTO Voucher (voucherID, value, expiry_date, points, mobileNo, shopID, redeem_date)
+VALUES
+  (1, 50, '2023-12-31', 100, 12345678901, 1, '2023-02-15'),
+  (2, 100, '2024-03-31', 200, 98765432101, 2, '2023-01-20'),
+  (3, 75, '2023-11-30', 150, 34567890121, 3, '2023-05-10'),
+  (4, 25, '2024-01-31', 50, 23456789011, 4, '2023-03-25');
+Set Identity_insert voucher off;
+
+Set Identity_insert Technical_Support_Ticket on;
+INSERT INTO Technical_Support_Ticket (ticketID, mobileNo, Issue_description, priority_level, status)
+VALUES
+  (1, 12345678901, 'Internet connection issue', 2, 'Open'),
+  (2, 98765432101, 'Device not recognizing SIM', 1, 'In Progress'),
+  (3, 34567890121, 'Slow data speeds', 3, 'Resolved'),
+  (4, 23456789011, 'App crashing frequently', 2, 'Resolved');
+Set Identity_insert Technical_Support_Ticket off;
+
+--Unable to show all tables at once
+exec GetfirstData;
+exec GETSecondDATA;
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+GO
+CREATE PROCEDURE GetFirstData
+AS
+BEGIN
+  -- Select data from Customer_profile
+  SELECT * FROM Customer_profile;
+
+  -- Select data from Customer_Account
+  SELECT * FROM Customer_Account;
+
+  -- Select data from Service_Plan
+  SELECT * FROM Service_Plan;
+
+  -- Select data from Subscription
+  SELECT * FROM Subscription;
+
+  -- Select data from Plan_Usage
+  SELECT * FROM Plan_Usage;
+
+  -- Select data from Payment
+  SELECT * FROM Payment;
+
+  -- Select data from Process_Payment
+  SELECT * FROM Process_Payment;
+
+  -- Select data from Wallet
+  SELECT * FROM Wallet;
+
+  -- Select data from Transfer_money
+  SELECT * FROM Transfer_money;
+
+  -- Select data from Benefits
+  SELECT * FROM Benefits;
+
+  end;
+
+  go
+  -------------------------------------
+CREATE PROCEDURE GETSecondData
+AS
+BEGIN
+  -- Select data from PointsGroup
+  SELECT * FROM Points_Group;
+
+  -- Select data from Exclusive_Offer
+  SELECT * FROM Exclusive_Offer;
+
+  -- Select data from Cashback
+  SELECT * FROM Cashback;
+
+  -- Select data from Plan_Provides_Benefits
+  SELECT * FROM Plan_Provides_Benefits;
+
+  -- Select data from Shop
+  SELECT * FROM Shop;
+
+  -- Select data from Physical_Shop
+  SELECT * FROM Physical_Shop;
+
+  -- Select data from E-shop
+  SELECT * FROM E_shop;
+
+  -- Select data from Voucher
+  SELECT * FROM Voucher;
+
+  -- Select data from Technical_Support_Ticket
+  SELECT * FROM Technical_Support_Ticket;
+END;
+
+
+ 
