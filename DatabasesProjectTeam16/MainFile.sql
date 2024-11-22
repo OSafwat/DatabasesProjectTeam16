@@ -830,10 +830,10 @@ VALUES
 
 INSERT INTO Customer_Account (mobileNo, pass, balance, account_type, start_date, status, points, nationalID)
 VALUES
-  (12345678901, 'password123', 100.0, 'Prepaid', '2023-01-01', 'Active', 500, 0234567890),
-  (98765432101, 'password456', 250.5, 'Post paid', '2022-11-22', 'Active', 1000, 0076543210),
-  (34567890121, 'password789', 150.25, 'Prepaid', '2023-03-15', 'Active', 750, 00456789012),
-  (23456789011, 'password012', 300.75, 'Post paid', '2022-12-01', 'Active', 1200, 00345678901);
+  ('12345678901', 'password123', 100.0, 'Prepaid', '2023-01-01', 'Active', 500, 0234567890),
+  ('98765432101', 'password456', 250.5, 'Post paid', '2022-11-22', 'Active', 1000, 0076543210),
+  ('34567890121', 'password789', 150.25, 'Prepaid', '2023-03-15', 'Active', 750, 00456789012),
+  ('23456789011', 'password012', 300.75, 'Post paid', '2022-12-01', 'Active', 1200, 00345678901);
   
 
 Set Identity_insert service_plan on;
@@ -848,10 +848,10 @@ Set Identity_insert service_plan off;
 
 INSERT INTO Subscription (mobileNo, planID, subscription_date, status)
 VALUES
-  (12345678901, 1, '2023-01-01', 'Active'),
-  (98765432101, 2, '2022-11-22', 'Active'),
-  (34567890121, 3, '2023-04-01', 'Active'),
-  (23456789011, 4, '2023-02-15', 'Active');
+  ('12345678901', 1, '2023-01-01', 'Active'),
+  ('98765432101', 2, '2022-11-22', 'Active'),
+  ('34567890121', 3, '2023-04-01', 'Active'),
+  ('23456789011', 4, '2023-02-15', 'Active');
 
 
 
@@ -865,13 +865,14 @@ VALUES
 SET IDENTITY_INSERT Plan_Usage OFF;
 
 
+-------------
 Set Identity_insert payment on;
 INSERT INTO Payment (paymentID, amount, date_of_payment, payment_method, status, mobileNo)
 VALUES
-  (1, 20.0, '2023-01-15', 'cash', 'Successful', 12345678901),
-  (2, 30.0, '2022-12-10', 'credit', 'Successful', 98765432101),
-  (3, 40.0, '2023-05-01', 'cash', 'Successful', 34567890121),
-  (4, 10.0, '2023-03-15', 'credit', 'Successful', 23456789011);
+  (1, 20.0, '2023-01-15', 'cash', 'Successful', '12345678901'),
+  (2, 30.0, '2022-12-10', 'credit', 'Successful','98765432101'),
+  (3, 40.0, '2023-05-01', 'cash', 'Successful', '34567890121'),
+  (4, 10.0, '2023-03-15', 'credit', 'Successful','23456789011');
 Set Identity_insert payment off;
 
 
@@ -886,10 +887,10 @@ VALUES
 Set Identity_insert wallet on;
 INSERT INTO Wallet (walletID, current_balance, currency, last_modified_date, nationalID, mobileNo)
 VALUES
-  (1, 100.00, 'USD', '2023-01-01', 0234567890, 12345678901),
-  (2, 200.50, 'USD', '2022-11-22', 0076543210, 98765432101),
-  (3, 150.25, 'USD', '2023-03-15', 00456789012, 34567890121),
-  (4, 300.75, 'USD', '2022-12-01', 00345678901, 23456789011);
+  (1, 100.00, 'USD', '2023-01-01', 0234567890,'12345678901'),
+  (2, 200.50, 'USD', '2022-11-22', 0076543210,'98765432101'),
+  (3, 150.25, 'USD', '2023-03-15', 00456789012, '34567890121'),
+  (4, 300.75, 'USD', '2022-12-01', 00345678901, '23456789011');
   Set Identity_insert wallet off;
 
 
@@ -906,10 +907,10 @@ Set Identity_insert transfer_money off;
 Set Identity_insert benefits on;
 INSERT INTO Benefits (benefitID, description, validity_date, status, mobileNo)
 VALUES
-  (1, '10% discount on online shopping', '2023-12-31', 'Active', 12345678901),
-  (2, 'Free movie ticket', '2024-06-30', 'Active', 98765432101),
-  (3, '20% discount on food delivery', '2023-11-30', 'Active', 34567890121),
-  (4, 'Free data bundle', '2024-01-17','Active',23456789011);
+  (1, '10% discount on online shopping', '2023-12-31', 'Active','12345678901'),
+  (2, 'Free movie ticket', '2024-06-30', 'Active','98765432101'),
+  (3, '20% discount on food delivery', '2023-11-30', 'Active','34567890121'),
+  (4, 'Free data bundle', '2024-01-17','Active','23456789011');
  Set Identity_insert benefits off;
 
 
@@ -984,10 +985,10 @@ Set Identity_insert voucher off;
 Set Identity_insert Technical_Support_Ticket on;
 INSERT INTO Technical_Support_Ticket (ticketID, mobileNo, Issue_description, priority_level, status)
 VALUES
-  (1, 12345678901, 'Internet connection issue', 2, 'Open'),
-  (2, 98765432101, 'Device not recognizing SIM', 1, 'In Progress'),
-  (3, 34567890121, 'Slow data speeds', 3, 'Resolved'),
-  (4, 23456789011, 'App crashing frequently', 2, 'Resolved');
+  (1, '12345678901', 'Internet connection issue', 2, 'Open'),
+  (2, '98765432101', 'Device not recognizing SIM', 1, 'In Progress'),
+  (3, '34567890121', 'Slow data speeds', 3, 'Resolved'),
+  (4, '23456789011', 'App crashing frequently', 2, 'Resolved');
 Set Identity_insert Technical_Support_Ticket off;
 
 --Unable to show all tables at once
