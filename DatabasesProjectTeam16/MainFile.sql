@@ -331,14 +331,17 @@ GO
 
 -- 2.2a
 CREATE VIEW allCustomerAccounts AS
-SELECT * FROM Customer_Profile P 
-INNER JOIN Customer_Account A ON P.national_id = A.national_id; 
+SELECT P.*, A.mobileNo, A.balance, A.account_type, A.start_date, A.points
+FROM Customer_Profile P 
+INNER JOIN Customer_Account A ON P.nationalID = A.nationalID
+WHERE A.status = 'active'; 
 
 GO
 
 -- 2.2b
 CREATE VIEW allServicePlans AS
-SELECT * FROM Service_Plan;
+SELECT * 
+FROM Service_Plan;
 
 GO
 
@@ -352,17 +355,18 @@ GO
 
 -- 2.2d
 CREATE VIEW accountPayments AS
-Select * FROM Payments P 
+SELECT P.*, A.balance, A.account_type, A.start_date, A.status, A.points
+FROM Payment P 
 INNER JOIN Customer_Account A ON P.mobileNo = A.mobileNo;
 
 GO
 
 -- 2.2e
 CREATE VIEW allShops AS
-SELECT * FROM Shop;
+SELECT *
+FROM Shop;
 
 GO
-
 
 -- 2.2f
 CREATE VIEW allResolvedTickets AS
@@ -374,7 +378,7 @@ GO
 
 -- 2.2g
 CREATE VIEW CustomerWallet AS
-SELECT W.*, CONCAT(C.first_name, ' ', C.last_name) AS customerName
+SELECT W.*, C.first_name, C.last_name
 FROM Wallet W
 INNER JOIN Customer_Profile C ON W.nationalID = C.nationalID;
 GO
@@ -382,7 +386,7 @@ GO
 -- 2.2h
 CREATE VIEW E_shopVouchers AS
 SELECT E.*, V.voucherId, V.value
-FROM E_shops E
+FROM E_Shop E
 INNER JOIN Voucher V ON E.shopId = V.shopId
 WHERE V.redeem_date IS NOT NULL;
 			
@@ -416,10 +420,10 @@ GO
 CREATE PROCEDURE Account_Plan 
 AS
 BEGIN
-	SELECT c.mobileNo, c.name AS customer_name, su.planID, sp.name AS plan_name
+	SELECT c.mobileNo, c.balance, c.account_type, c.status, su.planID, sp.name AS plan_name
 	FROM Customer_Account c
-	INNER JOIN Service_Plan sp ON c.mobileNo = sp.mobileNo
-	INNER JOIN Subscription su ON sp.planID = sp.planID
+	INNER JOIN Subscription su ON c.mobileNo = su.mobileNo
+	INNER JOIN Service_Plan sp ON su.planID = sp.planID
 END
 
 GO
@@ -429,10 +433,9 @@ CREATE FUNCTION Account_Plan_Date (@Subscription_Date DATE, @Plan_id INT)
 RETURNS TABLE
 AS
 RETURN (
-	SELECT CA.mobileNo, S.planID, SP.name AS plan_name
-	FROM Customer_Account CA 
+	SELECT CA.mobileNo, CA.balance, CA.account_type, CA.start_date, CA.status, CA.points
+	FROM Customer_Account CA
 	INNER JOIN Subscription S ON S.mobileNo = CA.mobileNo
-	INNER JOIN Service_Plan SP ON S.planID = SP.planID
 	WHERE @Plan_id = S.planID AND @Subscription_Date = S.subscription_date
 )
 
@@ -647,7 +650,7 @@ CREATE PROCEDURE Unsubscribed_Plans
 AS
 SELECT SP.planID
 FROM Service_Plan SP WHERE NOT EXISTS (
-	SELECT * 
+	SELECT 1 
 	FROM Subscription S
 	WHERE S.planID = SP.planID AND @MobileNo = mobileNo
 )
@@ -655,13 +658,12 @@ FROM Service_Plan SP WHERE NOT EXISTS (
 GO
 
 -- 2.4d
--- unsure about what dates im supposed to compare with - Ali
 CREATE FUNCTION Usage_Plan_CurrentMonth
 (@MobileNo CHAR(11))
 RETURNS TABLE
 AS
 RETURN (
-	SELECT PU.data_consumption, PU.minutes_used, PU.SMS_sent
+	SELECT S.planID, PU.data_consumption, PU.minutes_used, PU.SMS_sent
 	FROM Plan_Usage PU
 	INNER JOIN Subscription S ON S.planID = PU.planID
 	WHERE @MobileNo = PU.mobileNo AND S.status = 'active' AND (MONTH(GETDATE()) = MONTH(PU.start_date) OR MONTH(GETDATE()) = MONTH(PU.end_date))
@@ -670,7 +672,6 @@ RETURN (
 GO
 
 -- 2.4e
--- unsure what columns we're actually supposed to return - Ali
 CREATE FUNCTION Cashback_Wallet_Customer (@NationalID INT)
 RETURNS TABLE
 AS
@@ -680,6 +681,7 @@ RETURN (
 	INNER JOIN Wallet W ON W.walletID = C.walletID
 	WHERE @NationalID = W.nationalID
 )
+
 GO
 
 -- 2.4f
@@ -715,48 +717,44 @@ AS
 GO
 
 --2.4h
--- i dont know what they mean by 'remaining amount', remaining what? data? minutes? SMS? apples? bananas? oranges? pencils?
-CREATE FUNCTION Remaining_plan_amount (@MobileNo char(11),@plan_name varchar(50))
-returns int
+-- Which payment? I'll assume it wants the remaining amount on the *most recent* payment the user
+-- made to the given plan. Since paymentID is IDENTITY(1, 1), the payment with the maximum ID
+-- is the most recent one.
+CREATE FUNCTION Remaining_plan_amount (@MobileNo char(11), @plan_name varchar(50))
+RETURNS INT
 AS
 BEGIN
-	DECLARE @Remainder int
-	DECLARE @T1 int
-	DECLARE @T2 int
+	DECLARE @remaining_amount INT
 
-	SELECT @T1 = s.data_offered , @T2 = p.data_consumption
-	from Service_Plan s
-		INNER JOIN Plan_Usage p on p.planID = s.planID
-	where s.name = @plan_name AND p.mobileNo = @MobileNo;
+	SELECT TOP 1 @remaining_amount = PP.remaining_balance
+	FROM Service_Plan SP 
+	INNER JOIN Process_Payment PP ON SP.planID = PP.planID
+	INNER JOIN Payment P ON PP.paymentID = P.paymentID
+	WHERE P.mobileNo = @MobileNo AND SP.name = @plan_name
+	ORDER BY PP.paymentID DESC
 
-SET @Remainder = @T1 - @T2
-return @Remainder
-
+	RETURN ISNULL(@remaining_amount, 0)
 END;
 
-GO
-
-SELECT dbo.Remaining_plan_amount ('01033108747','DIDDY_PARTY') as QUANDALE_DINGLE; 
 
 GO
 
 -- 2.4i
---im not confindent in which tables i used
-CREATE FUNCTION Extra_plan_amount (@MobileNo char(11),@plan_name varchar(50))
-returns int
+CREATE FUNCTION Extra_plan_amount (@MobileNo char(11), @plan_name varchar(50))
+RETURNS INT
 AS
 BEGIN
-	DECLARE @Extra_Amount int
-	SELECT @Extra_Amount = pp.extra_amount
-	from Payment pa
-		INNER JOIN Process_Payment pp on pp.paymentID = pa.paymentID
-		INNER JOIN Service_Plan sp on sp.planID = pp.planID
-	where sp.name = @plan_name AND pa.mobileNo = @MobileNo
-return @Extra_Amount
-END
+	DECLARE @extra_amount INT
 
-GO
-SELECT dbo.Extra_plan_amount ('01033108747','Livvy Dunn') as zaflat;
+	SELECT TOP 1 PP.extra_amount
+	FROM Service_Plan SP 
+	INNER JOIN Process_Payment PP ON SP.planID = PP.planID
+	INNER JOIN Payment P ON PP.paymentID = P.paymentID
+	WHERE P.mobileNo = @MobileNo AND SP.name = @plan_name
+	ORDER BY PP.paymentID DESC
+
+	RETURN ISNULL(@extra_amount, 0)
+END;
 
 GO
 
@@ -765,9 +763,8 @@ CREATE PROCEDURE Top_Successful_Payments (@MobileNo char(11))
 AS
 	SELECT TOP 10 p.paymentID, p.amount, p.date_of_payment
 	FROM Payment p
-	where p.mobileNo = @MobileNo
-	Order by p.amount desc;
-
+	WHERE p.mobileNo = @MobileNo
+	ORDER BY p.amount DESC;
 
 GO
 
@@ -794,7 +791,8 @@ AS
 BEGIN
 	INSERT INTO Payment VALUES (@amount, GETDATE(), @payment_method, 'successful', @MobileNo)
 	DECLARE @payment_id INT
-	SELECT @payment_id = MAX(paymentID) FROM Payment
+	SELECT @payment_id = MAX(paymentID) FROM Payment -- paymentID is IDENTITY(1, 1) so the last payment added will have highest ID
+
 	INSERT INTO Process_Payment VALUES (@payment_id, @plan_id)
 	
 	DECLARE @remaining_balance DECIMAL(10, 1)
@@ -857,7 +855,7 @@ AS
 		WHERE mobileNo = @MobileNo
 	END
 
-----------------------------------------------------Gemini
+--------------- TESTING PURPOSES --------------------------------
 exec dbo.dropAllTables
 Exec dbo.createAllTables
 
@@ -915,7 +913,6 @@ VALUES
   (3, 40.0, '2023-05-01', 'cash', 'Successful', '34567890121'),
   (4, 10.0, '2023-03-15', 'credit', 'Successful','23456789011');
 Set Identity_insert payment off;
-
 
 INSERT INTO Process_Payment (paymentID, planID)
 VALUES
@@ -1001,7 +998,6 @@ VALUES
   (4, 'Bookstore', 'Books');
 Set Identity_insert shop off;
 
-
 INSERT INTO Physical_Shop (shopID, address, working_hours)
 VALUES
   (2, '123 Main St', '10:00 AM - 6:00 PM'),
@@ -1035,21 +1031,6 @@ Set Identity_insert Technical_Support_Ticket off;
 --Unable to show all tables at once
 exec GetfirstData;
 exec GETSecondDATA;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 GO
